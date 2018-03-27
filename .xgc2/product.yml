@@ -4,7 +4,7 @@ name: XGC2 Scout Messages
 kind: ros1-apt
 summary: ROS Melodic and Noetic AgileX Scout message definitions kept compatible with
   the recovered vehicle driver.
-version: 0.3.3-5
+version: 0.3.3-6
 ros:
   distro: melodic,noetic
   packages:
@@ -48,3 +48,6 @@ ownership:
   - /opt/ros/noetic/include/scout_msgs
 release:
   workflow: release.yml
+  apt_versions:
+    bionic: 0.3.3-6
+    focal: 0.3.3-6
