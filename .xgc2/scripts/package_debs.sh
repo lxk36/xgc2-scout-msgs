@@ -10,7 +10,7 @@ PACKAGE="ros-${ROS_DISTRO}-scout-msgs"
 ROS_PACKAGE="scout_msgs"
 
 product_version() {
-  awk -F': *' '/^version:[[:space:]]*/ {print $2; exit}' "${REPO_ROOT}/.xgc2/product.yml"
+  sed -n 's/^version:[[:space:]]*//p' "${REPO_ROOT}/.xgc2/product.yml" | head -n 1 | tr -d '\r'
 }
 
 VERSION="${PACKAGE_VERSION:-$(product_version)}"
