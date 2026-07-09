@@ -4,7 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-ros:melodic-ros-base-bionic}"
+ROS_DISTRO="${ROS_DISTRO:-melodic}"
+DOCKER_IMAGE="${DOCKER_IMAGE:-ros:${ROS_DISTRO}-ros-base-bionic}"
 WORK_DIR="${WORK_DIR:-${REPO_ROOT}/.work/docker}"
 OUTPUT_DIR="${OUTPUT_DIR:-${REPO_ROOT}/debs}"
 INSTALL_CHECK="${INSTALL_CHECK:-true}"
@@ -13,6 +14,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --image)
       DOCKER_IMAGE="$2"
+      shift 2
+      ;;
+    --ros-distro)
+      ROS_DISTRO="$2"
       shift 2
       ;;
     --work-dir)
@@ -40,6 +45,7 @@ docker pull "${DOCKER_IMAGE}"
 docker run --rm \
   -e DEBIAN_FRONTEND=noninteractive \
   -e INSTALL_CHECK="${INSTALL_CHECK}" \
+  -e ROS_DISTRO="${ROS_DISTRO}" \
   -v "${REPO_ROOT}:/workspace/repo:ro" \
   -v "${WORK_DIR}:/workspace/work" \
   -v "${OUTPUT_DIR}:/workspace/out" \
@@ -57,21 +63,21 @@ docker run --rm \
       file \
       git \
       rsync \
-      ros-melodic-message-generation \
-      ros-melodic-message-runtime \
-      ros-melodic-rosbash \
-      ros-melodic-roslaunch \
-      ros-melodic-rospack \
-      ros-melodic-std-msgs
+      "ros-${ROS_DISTRO}-message-generation" \
+      "ros-${ROS_DISTRO}-message-runtime" \
+      "ros-${ROS_DISTRO}-rosbash" \
+      "ros-${ROS_DISTRO}-roslaunch" \
+      "ros-${ROS_DISTRO}-rospack" \
+      "ros-${ROS_DISTRO}-std-msgs"
 
     rm -rf /workspace/work/src /workspace/work/build /workspace/work/devel /workspace/work/install-root
     mkdir -p /workspace/work/src/scout_msgs
     rsync -a --delete /workspace/repo/ /workspace/work/src/scout_msgs/
 
     cd /workspace/work
-    source /opt/ros/melodic/setup.bash
+    source "/opt/ros/${ROS_DISTRO}/setup.bash"
     DESTDIR=/workspace/work/install-root catkin_make install \
-      -DCMAKE_INSTALL_PREFIX=/opt/ros/melodic \
+      -DCMAKE_INSTALL_PREFIX="/opt/ros/${ROS_DISTRO}" \
       -DCATKIN_ENABLE_TESTING=OFF
 
     /workspace/repo/.xgc2/scripts/package_debs.sh \
@@ -79,7 +85,7 @@ docker run --rm \
       --output-dir /workspace/out
 
     if [[ "${INSTALL_CHECK}" == "true" ]]; then
-      apt-get install -y /workspace/out/ros-melodic-scout-msgs_*.deb
+      apt-get install -y /workspace/out/"ros-${ROS_DISTRO}-scout-msgs"_*.deb
       /workspace/repo/.xgc2/scripts/check_installed_packages.sh
     fi
   '

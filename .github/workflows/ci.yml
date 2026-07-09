@@ -28,9 +28,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - arch: amd64
+          - ros_distro: melodic
+            image: ros:melodic-ros-base-bionic
+            arch: amd64
             runner: ubuntu-latest
-          - arch: arm64
+          - ros_distro: melodic
+            image: ros:melodic-ros-base-bionic
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - ros_distro: noetic
+            image: ros:noetic-ros-base-focal
+            arch: amd64
+            runner: ubuntu-latest
+          - ros_distro: noetic
+            image: ros:noetic-ros-base-focal
+            arch: arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
@@ -41,11 +53,13 @@ jobs:
       - name: Build and install-check deb package
         run: |
           .xgc2/scripts/build_debs_in_docker.sh \
-            --work-dir "$RUNNER_TEMP/xgc2-scout-msgs-${{ matrix.arch }}" \
+            --ros-distro "${{ matrix.ros_distro }}" \
+            --image "${{ matrix.image }}" \
+            --work-dir "$RUNNER_TEMP/xgc2-scout-msgs-${{ matrix.ros_distro }}-${{ matrix.arch }}" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
       - name: Upload deb artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-scout-msgs-debs-${{ matrix.arch }}
+          name: xgc2-scout-msgs-debs-${{ matrix.ros_distro }}-${{ matrix.arch }}
           path: debs/*.deb

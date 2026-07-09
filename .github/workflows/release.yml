@@ -71,9 +71,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - arch: amd64
+          - ros_distro: melodic
+            image: ros:melodic-ros-base-bionic
+            apt_distribution: bionic
+            arch: amd64
             runner: ubuntu-latest
-          - arch: arm64
+          - ros_distro: melodic
+            image: ros:melodic-ros-base-bionic
+            apt_distribution: bionic
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - ros_distro: noetic
+            image: ros:noetic-ros-base-focal
+            apt_distribution: focal
+            arch: amd64
+            runner: ubuntu-latest
+          - ros_distro: noetic
+            image: ros:noetic-ros-base-focal
+            apt_distribution: focal
+            arch: arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
@@ -82,22 +98,33 @@ jobs:
       - name: Build and install-check deb package
         run: |
           .xgc2/scripts/build_debs_in_docker.sh \
-            --work-dir "$RUNNER_TEMP/xgc2-scout-msgs-release-${{ matrix.arch }}" \
+            --ros-distro "${{ matrix.ros_distro }}" \
+            --image "${{ matrix.image }}" \
+            --work-dir "$RUNNER_TEMP/xgc2-scout-msgs-release-${{ matrix.ros_distro }}-${{ matrix.arch }}" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
       - name: Upload deb artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-scout-msgs-release-debs-${{ matrix.arch }}
+          name: xgc2-scout-msgs-release-debs-${{ matrix.ros_distro }}-${{ matrix.arch }}
           path: debs/*.deb
 
   publish-apt:
     if: ${{ inputs.publish_apt }}
     needs: build-debs
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ros_distro: melodic
+            apt_distribution: bionic
+          - ros_distro: noetic
+            apt_distribution: focal
     runs-on: ubuntu-latest
     env:
       APT_REPO_HOST: ${{ secrets.APT_REPO_HOST }}
       APT_REPO_PORT: ${{ secrets.APT_REPO_PORT }}
+      APT_REPO_DISTRIBUTION: ${{ matrix.apt_distribution }}
       APT_REPO_SSH_KEY: ${{ secrets.APT_REPO_SSH_KEY }}
       APT_REPO_KNOWN_HOSTS: ${{ secrets.APT_REPO_KNOWN_HOSTS }}
     steps:
@@ -117,4 +144,7 @@ jobs:
           test -n "${APT_REPO_SSH_KEY}"
           test -n "${APT_REPO_KNOWN_HOSTS}"
           export APT_REPO_PORT="${APT_REPO_PORT:-22}"
-          .xgc2/scripts/publish_apt_repo.sh --deb-dir debs
+          mkdir -p "debs-${{ matrix.ros_distro }}"
+          find debs -maxdepth 1 -type f -name "ros-${{ matrix.ros_distro }}-scout-msgs_*.deb" \
+            -exec cp {} "debs-${{ matrix.ros_distro }}/" \\;
+          .xgc2/scripts/publish_apt_repo.sh --deb-dir "debs-${{ matrix.ros_distro }}"
