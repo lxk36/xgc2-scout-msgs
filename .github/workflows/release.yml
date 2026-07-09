@@ -145,6 +145,5 @@ jobs:
           test -n "${APT_REPO_KNOWN_HOSTS}"
           export APT_REPO_PORT="${APT_REPO_PORT:-22}"
           mkdir -p "debs-${{ matrix.ros_distro }}"
-          find debs -maxdepth 1 -type f -name "ros-${{ matrix.ros_distro }}-scout-msgs_*.deb" \
-            -exec cp {} "debs-${{ matrix.ros_distro }}/" \\;
+          cp debs/ros-${{ matrix.ros_distro }}-scout-msgs_*.deb "debs-${{ matrix.ros_distro }}/"
           .xgc2/scripts/publish_apt_repo.sh --deb-dir "debs-${{ matrix.ros_distro }}"
