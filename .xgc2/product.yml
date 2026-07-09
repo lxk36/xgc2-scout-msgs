@@ -1,0 +1,32 @@
+schema: xgc2.product.v1
+id: xgc2-scout-msgs
+name: XGC2 Scout Messages
+version: 0.3.3-1
+kind: ros1-apt
+summary: ROS Melodic AgileX Scout message definitions kept compatible with the recovered vehicle driver.
+ros:
+  distro: melodic
+  packages:
+  - scout_msgs
+apt:
+  distribution: bionic
+  install:
+  - ros-melodic-scout-msgs
+  packages:
+  - ros-melodic-scout-msgs
+  depends:
+  - ros-melodic-message-runtime
+  - ros-melodic-std-msgs
+usage:
+  install: |
+    sudo apt update
+    sudo apt install ros-melodic-scout-msgs
+  smoke_test: |
+    rospack find scout_msgs
+    rosmsg show scout_msgs/ScoutStatus
+ownership:
+  paths:
+  - /opt/ros/melodic/share/scout_msgs
+  - /opt/ros/melodic/include/scout_msgs
+release:
+  workflow: release.yml
